@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package helloworld;
+
+message Greeting {
+  string message = 1;
+  optional string age = 2;
+}

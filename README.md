@@ -1,2 +1,70 @@
-# voer
+# Vör
+
 Schema Registry for Protobufs
+
+### Why?
+
+### How it works
+
+First, we'd need to
+
+1. Create a new `.proto` file containing schema.
+2. Validate `.proto` file.
+3. Upload `.proto` file to Vör server.
+
+Once we've
+
+### Example use case
+
+## Usage
+
+## Development
+
+### Dependencies
+
+### Linting
+
+- `gofmt`, installed with Go.
+- `golangci-lint`, [installed separately](https://golangci-lint.run/welcome/install/#local-installation).
+
+Installation of additional tools:
+
+```bash
+# Install golangci-lint
+curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.1.6
+```
+
+#### Pre-commit
+
+A utility called [pre-commit](https://pre-commit.com) is used to automatically run our linting utilities before a commit
+is made.
+
+```bash
+# Install pre-commit hooks
+pre-commit install
+
+# Run all linting rules on all files manually
+pre-commit run --all-files
+```
+
+### Tests
+
+```bash
+go test ./...
+```
+
+### Build
+
+Builds are done with Bazel.
+
+```bash
+
+```
+
+### Release
+
+Cut new releases by using tags and GitHub Actions.
+
+```bash
+
+```
