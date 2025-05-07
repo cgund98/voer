@@ -27,8 +27,8 @@ func createTempProto(t *testing.T, ctx context.Context, content string) linker.F
 	return files[0]
 }
 
-// TestValidateBackwardsCompatibileMessageEqual tests that a message is backwards compatible with itself
-func TestValidateBackwardsCompatibileMessagesEqual(t *testing.T) {
+// TestValidateBackwardsCompatibleMessageEqual tests that a message is backwards compatible with itself
+func TestValidateBackwardsCompatibleMessagesEqual(t *testing.T) {
 	fileContent := `
 	syntax = "proto3";
 
@@ -42,14 +42,16 @@ func TestValidateBackwardsCompatibileMessagesEqual(t *testing.T) {
 	ctx := context.Background()
 	file := createTempProto(t, ctx, fileContent)
 
-	err := ValidateBackwardsCompatibileMessages(ctx, file.Messages(), file.Messages())
+	messages := ParseMessagesFromFile(file)
+
+	err := ValidateBackwardsCompatibleMessages(ctx, messages, messages)
 	if err != nil {
 		t.Fatalf("Failed to validate backwards compatible message: %v", err)
 	}
 }
 
-// TestValidateBackwardsCompatibileMessageEqual tests that a message is backwards compatible with itself
-func TestValidateBackwardsCompatibileMessagesAddedField(t *testing.T) {
+// TestValidateBackwardsCompatibleMessageEqual tests that a message is backwards compatible with itself
+func TestValidateBackwardsCompatibleMessagesAddedField(t *testing.T) {
 	prevFileContent := `
 	syntax = "proto3";
 
@@ -79,13 +81,16 @@ func TestValidateBackwardsCompatibileMessagesAddedField(t *testing.T) {
 	prevFile := createTempProto(t, ctx, prevFileContent)
 	latestFile := createTempProto(t, ctx, latestFileContent)
 
-	err := ValidateBackwardsCompatibileMessages(ctx, prevFile.Messages(), latestFile.Messages())
+	prevMessages := ParseMessagesFromFile(prevFile)
+	latestMessages := ParseMessagesFromFile(latestFile)
+
+	err := ValidateBackwardsCompatibleMessages(ctx, prevMessages, latestMessages)
 	if err != nil {
 		t.Fatalf("Failed to validate backwards compatible message: %v", err)
 	}
 }
 
-func TestValidateBackwardsCompatibileMessagesAddedNestedField(t *testing.T) {
+func TestValidateBackwardsCompatibleMessagesAddedNestedField(t *testing.T) {
 	prevFileContent := `
 		syntax = "proto3";
 
@@ -121,13 +126,16 @@ func TestValidateBackwardsCompatibileMessagesAddedNestedField(t *testing.T) {
 	prevFile := createTempProto(t, ctx, prevFileContent)
 	latestFile := createTempProto(t, ctx, latestFileContent)
 
-	err := ValidateBackwardsCompatibileMessages(ctx, prevFile.Messages(), latestFile.Messages())
+	prevMessages := ParseMessagesFromFile(prevFile)
+	latestMessages := ParseMessagesFromFile(latestFile)
+
+	err := ValidateBackwardsCompatibleMessages(ctx, prevMessages, latestMessages)
 	if err != nil {
 		t.Fatalf("Failed to validate backwards compatible message: %v", err)
 	}
 }
 
-func TestValidateBackwardsCompatibileMessagesRemovedField(t *testing.T) {
+func TestValidateBackwardsCompatibleMessagesRemovedField(t *testing.T) {
 	prevFileContent := `
 	syntax = "proto3";
 
@@ -153,7 +161,10 @@ func TestValidateBackwardsCompatibileMessagesRemovedField(t *testing.T) {
 	prevFile := createTempProto(t, ctx, prevFileContent)
 	latestFile := createTempProto(t, ctx, latestFileContent)
 
-	err := ValidateBackwardsCompatibileMessages(ctx, prevFile.Messages(), latestFile.Messages())
+	prevMessages := ParseMessagesFromFile(prevFile)
+	latestMessages := ParseMessagesFromFile(latestFile)
+
+	err := ValidateBackwardsCompatibleMessages(ctx, prevMessages, latestMessages)
 	if err == nil {
 		t.Fatalf("Expected error for removed field")
 	}
@@ -164,7 +175,7 @@ func TestValidateBackwardsCompatibileMessagesRemovedField(t *testing.T) {
 	}
 }
 
-func TestValidateBackwardsCompatibileMessagesRemovedNestedField(t *testing.T) {
+func TestValidateBackwardsCompatibleMessagesRemovedNestedField(t *testing.T) {
 	prevFileContent := `
 		syntax = "proto3";
 
@@ -200,7 +211,10 @@ func TestValidateBackwardsCompatibileMessagesRemovedNestedField(t *testing.T) {
 	prevFile := createTempProto(t, ctx, prevFileContent)
 	latestFile := createTempProto(t, ctx, latestFileContent)
 
-	err := ValidateBackwardsCompatibileMessages(ctx, prevFile.Messages(), latestFile.Messages())
+	prevMessages := ParseMessagesFromFile(prevFile)
+	latestMessages := ParseMessagesFromFile(latestFile)
+
+	err := ValidateBackwardsCompatibleMessages(ctx, prevMessages, latestMessages)
 	if err == nil {
 		t.Fatalf("Expected error for removed field")
 	}
@@ -211,7 +225,7 @@ func TestValidateBackwardsCompatibileMessagesRemovedNestedField(t *testing.T) {
 	}
 }
 
-func TestValidateBackwardsCompatibileMessagesChangedName(t *testing.T) {
+func TestValidateBackwardsCompatibleMessagesChangedName(t *testing.T) {
 	prevFileContent := `
 	syntax = "proto3";
 
@@ -238,7 +252,10 @@ func TestValidateBackwardsCompatibileMessagesChangedName(t *testing.T) {
 	prevFile := createTempProto(t, ctx, prevFileContent)
 	latestFile := createTempProto(t, ctx, latestFileContent)
 
-	err := ValidateBackwardsCompatibileMessages(ctx, prevFile.Messages(), latestFile.Messages())
+	prevMessages := ParseMessagesFromFile(prevFile)
+	latestMessages := ParseMessagesFromFile(latestFile)
+
+	err := ValidateBackwardsCompatibleMessages(ctx, prevMessages, latestMessages)
 	if err == nil {
 		t.Fatalf("Expected error for removed field")
 	}
@@ -249,7 +266,7 @@ func TestValidateBackwardsCompatibileMessagesChangedName(t *testing.T) {
 	}
 }
 
-func TestValidateBackwardsCompatibileMessagesChangedType(t *testing.T) {
+func TestValidateBackwardsCompatibleMessagesChangedType(t *testing.T) {
 	prevFileContent := `
 	syntax = "proto3";
 
@@ -276,7 +293,10 @@ func TestValidateBackwardsCompatibileMessagesChangedType(t *testing.T) {
 	prevFile := createTempProto(t, ctx, prevFileContent)
 	latestFile := createTempProto(t, ctx, latestFileContent)
 
-	err := ValidateBackwardsCompatibileMessages(ctx, prevFile.Messages(), latestFile.Messages())
+	prevMessages := ParseMessagesFromFile(prevFile)
+	latestMessages := ParseMessagesFromFile(latestFile)
+
+	err := ValidateBackwardsCompatibleMessages(ctx, prevMessages, latestMessages)
 	if err == nil {
 		t.Fatalf("Expected error for removed field")
 	}
@@ -287,7 +307,7 @@ func TestValidateBackwardsCompatibileMessagesChangedType(t *testing.T) {
 	}
 }
 
-func TestValidateBackwardsCompatibileMessagesChangedNestedType(t *testing.T) {
+func TestValidateBackwardsCompatibleMessagesChangedNestedType(t *testing.T) {
 	prevFileContent := `
 		syntax = "proto3";
 
@@ -327,7 +347,10 @@ func TestValidateBackwardsCompatibileMessagesChangedNestedType(t *testing.T) {
 	prevFile := createTempProto(t, ctx, prevFileContent)
 	latestFile := createTempProto(t, ctx, latestFileContent)
 
-	err := ValidateBackwardsCompatibileMessages(ctx, prevFile.Messages(), latestFile.Messages())
+	prevMessages := ParseMessagesFromFile(prevFile)
+	latestMessages := ParseMessagesFromFile(latestFile)
+
+	err := ValidateBackwardsCompatibleMessages(ctx, prevMessages, latestMessages)
 	if err == nil {
 		t.Fatalf("Expected error for removed field")
 	}
@@ -338,7 +361,7 @@ func TestValidateBackwardsCompatibileMessagesChangedNestedType(t *testing.T) {
 	}
 }
 
-func TestValidateBackwardsCompatibileMessagesChangedCardinality(t *testing.T) {
+func TestValidateBackwardsCompatibleMessagesChangedCardinality(t *testing.T) {
 	prevFileContent := `
 	syntax = "proto3";
 
@@ -365,7 +388,10 @@ func TestValidateBackwardsCompatibileMessagesChangedCardinality(t *testing.T) {
 	prevFile := createTempProto(t, ctx, prevFileContent)
 	latestFile := createTempProto(t, ctx, latestFileContent)
 
-	err := ValidateBackwardsCompatibileMessages(ctx, prevFile.Messages(), latestFile.Messages())
+	prevMessages := ParseMessagesFromFile(prevFile)
+	latestMessages := ParseMessagesFromFile(latestFile)
+
+	err := ValidateBackwardsCompatibleMessages(ctx, prevMessages, latestMessages)
 	if err == nil {
 		t.Fatalf("Expected error for removed field")
 	}
@@ -376,7 +402,7 @@ func TestValidateBackwardsCompatibileMessagesChangedCardinality(t *testing.T) {
 	}
 }
 
-func TestValidateBackwardsCompatibileMessagesRemovedMessage(t *testing.T) {
+func TestValidateBackwardsCompatibleMessagesRemovedMessage(t *testing.T) {
 	prevFileContent := `
 	syntax = "proto3";
 
@@ -402,7 +428,10 @@ func TestValidateBackwardsCompatibileMessagesRemovedMessage(t *testing.T) {
 	prevFile := createTempProto(t, ctx, prevFileContent)
 	latestFile := createTempProto(t, ctx, latestFileContent)
 
-	err := ValidateBackwardsCompatibileMessages(ctx, prevFile.Messages(), latestFile.Messages())
+	prevMessages := ParseMessagesFromFile(prevFile)
+	latestMessages := ParseMessagesFromFile(latestFile)
+
+	err := ValidateBackwardsCompatibleMessages(ctx, prevMessages, latestMessages)
 	if err == nil {
 		t.Fatalf("Expected error for removed field")
 	}
@@ -413,7 +442,7 @@ func TestValidateBackwardsCompatibileMessagesRemovedMessage(t *testing.T) {
 	}
 }
 
-func TestValidateUniquePackageUniqueNames(t *testing.T) {
+func TestValidatePackagesInSameDirectory(t *testing.T) {
 	firstContent := `
 	syntax = "proto3";
 
@@ -423,20 +452,41 @@ func TestValidateUniquePackageUniqueNames(t *testing.T) {
 	secondContent := `
 	syntax = "proto3";
 
-	package goodbyeworld;
+	package helloworld;
 	`
 
 	ctx := context.Background()
-	firstFile := createTempProto(t, ctx, firstContent)
-	secondFile := createTempProto(t, ctx, secondContent)
 
-	err := ValidateUniquePackage(ctx, linker.Files{firstFile, secondFile})
+	tempDir := t.TempDir()
+	firstFilePath := filepath.Join(tempDir, "request.proto")
+	secondFilePath := filepath.Join(tempDir, "response.proto")
+
+	err := os.WriteFile(firstFilePath, []byte(firstContent), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create temp file: %v", err)
+	}
+
+	err = os.WriteFile(secondFilePath, []byte(secondContent), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create temp file: %v", err)
+	}
+
+	firstFiles, err := ParsePath(ctx, firstFilePath)
+	if err != nil {
+		t.Fatalf("Failed to parse file: %v", err)
+	}
+	secondFiles, err := ParsePath(ctx, secondFilePath)
+	if err != nil {
+		t.Fatalf("Failed to parse file: %v", err)
+	}
+
+	err = ValidatePackagesInSameDirectory(ctx, linker.Files{firstFiles[0], secondFiles[0]})
 	if err != nil {
 		t.Fatalf("Expected no error, got: %v", err)
 	}
 }
 
-func TestValidateUniquePackageDuplicateNames(t *testing.T) {
+func TestValidatePackagesInSameDirectoryDifferentDirectories(t *testing.T) {
 	firstContent := `
 	syntax = "proto3";
 
@@ -453,8 +503,8 @@ func TestValidateUniquePackageDuplicateNames(t *testing.T) {
 	firstFile := createTempProto(t, ctx, firstContent)
 	secondFile := createTempProto(t, ctx, secondContent)
 
-	err := ValidateUniquePackage(ctx, linker.Files{firstFile, secondFile})
+	err := ValidatePackagesInSameDirectory(ctx, linker.Files{firstFile, secondFile})
 	if err == nil {
-		t.Fatalf("Expected error for duplicate package name")
+		t.Fatalf("Expected error for different directories")
 	}
 }

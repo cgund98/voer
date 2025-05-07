@@ -75,7 +75,7 @@ func uploadAction(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	// Validate package names are unique
-	err = proto.ValidateUniquePackage(ctx, protoFiles)
+	err = proto.ValidatePackagesInSameDirectory(ctx, protoFiles)
 	if err != nil {
 		return err
 	}
@@ -96,6 +96,25 @@ func uploadAction(ctx context.Context, cmd *cli.Command) error {
 	tx := db.Begin()
 
 	for _, file := range protoFiles {
+
+		// Get file content
+		content, err := os.ReadFile(file.Path())
+		if err != nil {
+			return fmt.Errorf("error getting file content: %v", err)
+		}
+
+		for i := 0; i < file.Messages().Len(); i++ {
+
+			message := file.Messages().Get(i)
+
+			// Print proto message
+			rawMessage, err := proto.ExtractMessageDefinitionByName(string(content), string(message.Name()))
+			if err != nil {
+				return fmt.Errorf("error extracting message definition: %v", err)
+			}
+			fmt.Println(rawMessage)
+			fmt.Println("----")
+		}
 
 		// Create a new package
 		pkg := ent.Package{PackageName: string(file.Package().Name())}

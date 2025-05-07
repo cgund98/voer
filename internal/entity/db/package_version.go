@@ -11,7 +11,6 @@ type PackageVersion struct {
 	PackageID uint `gorm:"not null,index,uniqueIndex:package_version_number_unique"`
 	Version   int  `gorm:"not null,uniqueIndex:package_version_number_unique"`
 
-	ProtoContents string
-
-	Package Package `gorm:"constraint:OnDelete:CASCADE,foreignKey:PackageID,references:ID"`
+	Package Package              `gorm:"constraint:OnDelete:CASCADE,foreignKey:PackageID,references:ID"`
+	Files   []PackageVersionFile `gorm:"constraint:OnDelete:CASCADE,foreignKey:PackageVersionID,references:ID"`
 }

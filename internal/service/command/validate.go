@@ -43,7 +43,10 @@ func validateAction(ctx context.Context, cmd *cli.Command) error {
 	}
 	latestFile := latestFiles[0]
 
-	err = proto.ValidateBackwardsCompatibileMessages(ctx, prevFile.Messages(), latestFile.Messages())
+	prevMessages := proto.ParseMessagesFromFile(prevFile)
+	latestMessages := proto.ParseMessagesFromFile(latestFile)
+
+	err = proto.ValidateBackwardsCompatibleMessages(ctx, prevMessages, latestMessages)
 	if err != nil {
 		return fmt.Errorf("error validating backwards compatible messages: %v", err)
 	}

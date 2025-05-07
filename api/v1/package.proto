@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package voer.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// General message types
+
+message Package {
+    uint64 id = 1;
+    google.protobuf.Timestamp createdAt = 2;
+    google.protobuf.Timestamp updatedAt = 3;
+
+    string name = 4;
+}
+
+message PackageVersion {
+    uint64 id = 1;
+    google.protobuf.Timestamp createdAt = 2;
+    google.protobuf.Timestamp updatedAt = 3;
+
+    uint64 packageId = 4;
+    uint64 version = 5;
+}
+
+message PackageVersionFile {
+    uint64 id = 1;
+    google.protobuf.Timestamp createdAt = 2;
+    google.protobuf.Timestamp updatedAt = 3;
+
+    uint64 packageVersionId = 4;
+    string protoContents = 5;
+}
+
+// UploadPackageVersion
+
+message UploadPackageVersionRequest {
+    repeated string fileContents = 1;
+}
+
+message UploadPackageVersionResponse {
+    uint64 packageId = 1;
+    int64 version = 2;
+}
+
+// gRPC service for managing packages
+service PackageService {
+    rpc UploadPackageVersion(UploadPackageVersionRequest) returns (UploadPackageVersionResponse) {}
+}
