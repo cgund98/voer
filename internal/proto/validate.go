@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/bufbuild/protocompile/linker"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -65,6 +66,20 @@ func ValidateBackwardsCompatibileMessages(ctx context.Context, prevMessages, lat
 		if err := ValidateBackwardsCompatibileMessage(ctx, prevMessage, latestMessage); err != nil {
 			return fmt.Errorf("message %s: %w", prevMessage.FullName(), err)
 		}
+	}
+
+	return nil
+}
+
+// ValidateUniquePackage will validate that among a set of proto files, no two files have the same package name
+func ValidateUniquePackage(ctx context.Context, protoFiles linker.Files) error {
+
+	packageNames := make(map[string]string)
+	for _, protoFile := range protoFiles {
+		if _, ok := packageNames[string(protoFile.Package())]; ok {
+			return fmt.Errorf("proto file %s has the same package name as %s", protoFile.Path(), packageNames[string(protoFile.Package())])
+		}
+		packageNames[string(protoFile.Package())] = protoFile.Path()
 	}
 
 	return nil

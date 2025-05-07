@@ -412,3 +412,49 @@ func TestValidateBackwardsCompatibileMessagesRemovedMessage(t *testing.T) {
 		t.Fatalf("Expected error: %s, got: %s", expectedError, err.Error())
 	}
 }
+
+func TestValidateUniquePackageUniqueNames(t *testing.T) {
+	firstContent := `
+	syntax = "proto3";
+
+	package helloworld;
+	`
+
+	secondContent := `
+	syntax = "proto3";
+
+	package goodbyeworld;
+	`
+
+	ctx := context.Background()
+	firstFile := createTempProto(t, ctx, firstContent)
+	secondFile := createTempProto(t, ctx, secondContent)
+
+	err := ValidateUniquePackage(ctx, linker.Files{firstFile, secondFile})
+	if err != nil {
+		t.Fatalf("Expected no error, got: %v", err)
+	}
+}
+
+func TestValidateUniquePackageDuplicateNames(t *testing.T) {
+	firstContent := `
+	syntax = "proto3";
+
+	package helloworld;
+	`
+
+	secondContent := `
+	syntax = "proto3";
+
+	package helloworld;
+	`
+
+	ctx := context.Background()
+	firstFile := createTempProto(t, ctx, firstContent)
+	secondFile := createTempProto(t, ctx, secondContent)
+
+	err := ValidateUniquePackage(ctx, linker.Files{firstFile, secondFile})
+	if err == nil {
+		t.Fatalf("Expected error for duplicate package name")
+	}
+}
