@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package helloworld;
+
+message GreetingResponse {
+  string message = 1;
+  optional string name = 2;
+}
+
+// We removed the message GreetingResponseV2. This is a backwards incompatible change and will result in an error.
