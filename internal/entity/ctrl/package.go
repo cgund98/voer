@@ -15,11 +15,11 @@ import (
 )
 
 // checkBackwardsCompatible checks if a message is backwards compatible with the latest version of the message.
-func checkBackwardsCompatible(ctx context.Context, db *gorm.DB, pckName string, parsedMsg proto.ParsedMessage) error {
+func checkBackwardsCompatible(ctx context.Context, db *gorm.DB, packageID uint, parsedMsg proto.ParsedMessage) error {
 
 	// Check if message exists
 	results := []entity.Message{}
-	err := db.Model(&entity.Message{}).Preload("LatestVersion").Where("package_id = ? AND name = ?", pckName, parsedMsg.Name).Limit(1).Find(&results).Error
+	err := db.Model(&entity.Message{}).Preload("LatestVersion").Where("package_id = ? AND name = ?", packageID, parsedMsg.Name).Limit(1).Find(&results).Error
 	if err != nil {
 		return fmt.Errorf("failed to check if message exists: %w", err)
 	}
@@ -73,7 +73,7 @@ func createMessageEntities(ctx context.Context, tx *gorm.DB, reqPkg *v1.PackageF
 
 	for _, msg := range parsedMsgs {
 		// Check each message for backwards compatibility
-		err := checkBackwardsCompatible(ctx, tx, reqPkg.PackageName, msg)
+		err := checkBackwardsCompatible(ctx, tx, packageID, msg)
 		if err != nil {
 			return fmt.Errorf("failed to check backwards compatible message: %w", err)
 		}
@@ -102,10 +102,16 @@ func createMessageEntities(ctx context.Context, tx *gorm.DB, reqPkg *v1.PackageF
 			return fmt.Errorf("failed to get next message version: %w", err)
 		}
 
+		serializedSchema, err := proto.SerializeMessage(msg)
+		if err != nil {
+			return fmt.Errorf("failed to serialize message: %w", err)
+		}
+
 		messageVersion := entity.MessageVersion{
-			MessageID: message.ID,
-			Version:   nextMessageVersion,
-			ProtoBody: protoBody,
+			MessageID:        message.ID,
+			Version:          nextMessageVersion,
+			ProtoBody:        protoBody,
+			SerializedSchema: serializedSchema,
 		}
 		result = tx.Create(&messageVersion)
 		if result.Error != nil {
