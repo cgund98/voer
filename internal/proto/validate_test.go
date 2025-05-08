@@ -508,3 +508,73 @@ func TestValidatePackagesInSameDirectoryDifferentDirectories(t *testing.T) {
 		t.Fatalf("Expected error for different directories")
 	}
 }
+
+func TestValidateNoDuplicateFileNames(t *testing.T) {
+	content := `
+	syntax = "proto3";
+
+	package helloworld;
+	`
+
+	dir1 := t.TempDir()
+	dir2 := t.TempDir()
+
+	filePath1 := filepath.Join(dir1, "request.proto")
+	filePath2 := filepath.Join(dir2, "request.proto")
+
+	err := os.WriteFile(filePath1, []byte(content), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create temp file: %v", err)
+	}
+
+	err = os.WriteFile(filePath2, []byte(content), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create temp file: %v", err)
+	}
+
+	ctx := context.Background()
+	files, err := ParsePath(ctx, filePath1, filePath2)
+	if err != nil {
+		t.Fatalf("Failed to parse file: %v", err)
+	}
+
+	err = ValidateNoDuplicateFileNames(ctx, files)
+	if err == nil {
+		t.Fatalf("Expected error for duplicate file names")
+	}
+}
+
+func TestValidateNoDuplicateFileNamesDifferentNames(t *testing.T) {
+	content := `
+	syntax = "proto3";
+
+	package helloworld;
+	`
+
+	dir1 := t.TempDir()
+	dir2 := t.TempDir()
+
+	filePath1 := filepath.Join(dir1, "request.proto")
+	filePath2 := filepath.Join(dir2, "response.proto")
+
+	err := os.WriteFile(filePath1, []byte(content), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create temp file: %v", err)
+	}
+
+	err = os.WriteFile(filePath2, []byte(content), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create temp file: %v", err)
+	}
+
+	ctx := context.Background()
+	files, err := ParsePath(ctx, filePath1, filePath2)
+	if err != nil {
+		t.Fatalf("Failed to parse file: %v", err)
+	}
+
+	err = ValidateNoDuplicateFileNames(ctx, files)
+	if err != nil {
+		t.Fatalf("Expected no error, got: %v", err)
+	}
+}

@@ -45,7 +45,7 @@ func NewDB(dbPath string) (*gorm.DB, error) {
 		return nil, err
 	}
 
-	err = db.AutoMigrate(&ent.Package{}, &ent.PackageVersion{}, &ent.PackageVersionFile{})
+	err = db.AutoMigrate(&ent.Package{}, &ent.PackageVersion{}, &ent.PackageVersionFile{}, &ent.Message{}, &ent.MessageVersion{})
 	if err != nil {
 		return nil, err
 	}

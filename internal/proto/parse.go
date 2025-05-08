@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 
 	"github.com/bufbuild/protocompile"
@@ -143,4 +144,85 @@ func GetMessageByName(messages []ParsedMessage, fullName string) *ParsedMessage 
 		}
 	}
 	return nil
+}
+
+type ParseStringInput struct {
+	FileName     string
+	FileContents string
+}
+
+// ParseStrings will parse a list of strings into a list of proto files
+// This is helpful for when you have a list of proto files in memory but not on disk
+func ParseStrings(ctx context.Context, inputs ...ParseStringInput) (linker.Files, error) {
+
+	// Build map of file names to file contents
+	accessor := make(map[string]string)
+	for _, input := range inputs {
+		accessor[input.FileName] = input.FileContents
+	}
+
+	// Write to temp files
+	tempFiles := make([]string, 0)
+	fileNames := make(map[string]bool)
+
+	// Create temp directory to write files to
+	tempDir, err := os.MkdirTemp(os.TempDir(), "proto")
+	if err != nil {
+		return nil, fmt.Errorf("failed to create temporary directory: %w", err)
+	}
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			fmt.Printf("failed to remove temporary file: %v\n", err)
+		}
+	}()
+
+	for fileName, fileContents := range accessor {
+		// Check for duplicate file names
+		if _, ok := fileNames[fileName]; ok {
+			return nil, fmt.Errorf("duplicate file name: %s", fileName)
+		}
+		fileNames[fileName] = true
+
+		// Create temp file
+		tempFile, err := os.Create(filepath.Join(tempDir, filepath.Base(filepath.Clean(fileName))))
+		if err != nil {
+			return nil, fmt.Errorf("failed to create temporary file: %w", err)
+		}
+
+		// Write to temp file
+		_, err = tempFile.WriteString(fileContents)
+		if err != nil {
+			return nil, fmt.Errorf("failed to write to temporary file: %w", err)
+		}
+
+		// Add to list of temp files
+		tempFiles = append(tempFiles, tempFile.Name())
+	}
+
+	// List tmpFiles in temp dir
+	files, err := ParsePath(ctx, tempFiles...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to compile proto file: %w", err)
+	}
+	return files, nil
+}
+
+type ReadStringResult struct {
+	FileName     string
+	FileContents string
+}
+
+func ReadStrings(ctx context.Context, filePaths ...string) ([]ReadStringResult, error) {
+	results := make([]ReadStringResult, 0)
+	for _, filePath := range filePaths {
+		content, err := os.ReadFile(filePath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read file: %w", err)
+		}
+		results = append(results, ReadStringResult{
+			FileName:     filePath,
+			FileContents: string(content),
+		})
+	}
+	return results, nil
 }

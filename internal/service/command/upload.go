@@ -9,16 +9,18 @@ import (
 
 	"github.com/bufbuild/protocompile/linker"
 	"github.com/urfave/cli/v3"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
-	ent "github.com/cgund98/voer/internal/entity/db"
+	v1 "github.com/cgund98/voer/api/v1"
 	"github.com/cgund98/voer/internal/infra/config"
-	"github.com/cgund98/voer/internal/infra/sqlite"
 	"github.com/cgund98/voer/internal/proto"
 )
 
 const (
 	// Flag names
-	protoFlag = "proto"
+	protoFlag    = "proto"
+	endpointFlag = "endpoint"
 )
 
 // findProtoFiles will find all the proto files in a given path
@@ -53,6 +55,7 @@ func findProtoFiles(rootPath string) ([]string, error) {
 func uploadAction(ctx context.Context, cmd *cli.Command) error {
 	// Flags
 	protoPath := cmd.String(protoFlag)
+	endpoint := cmd.String(endpointFlag)
 
 	if protoPath == "" {
 		return errors.New("proto file path is required")
@@ -80,115 +83,56 @@ func uploadAction(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	// Init config
-	config, err := config.LoadConfig()
+	// Init client
+	opts := []grpc.DialOption{}
+	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+
+	conn, err := grpc.NewClient(endpoint, opts...)
 	if err != nil {
-		return err
+		return fmt.Errorf("error creating client: %v", err)
 	}
+	client := v1.NewPackageSvcClient(conn)
 
-	// Initialize DB connection
-	db, err := sqlite.NewDB(config.SqliteDBPath)
-	if err != nil {
-		return fmt.Errorf("error initializing DB connection: %v", err)
-	}
+	// Upload the proto files
+	uploadReq := &v1.UploadPackageVersionRequest{}
 
-	// Create transaction
-	tx := db.Begin()
+	// Group based on package name
+	packageFiles := proto.GroupByPackage(protoFiles)
+	for packageName, files := range packageFiles {
 
-	for _, file := range protoFiles {
-
-		// Get file content
-		content, err := os.ReadFile(file.Path())
-		if err != nil {
-			return fmt.Errorf("error getting file content: %v", err)
-		}
-
-		for i := 0; i < file.Messages().Len(); i++ {
-
-			message := file.Messages().Get(i)
-
-			// Print proto message
-			rawMessage, err := proto.ExtractMessageDefinitionByName(string(content), string(message.Name()))
+		// Get file contents
+		packageFiles := make([]*v1.ProtoFile, 0)
+		for _, file := range files {
+			fileContents, err := proto.ReadStrings(ctx, file.Path())
 			if err != nil {
-				return fmt.Errorf("error extracting message definition: %v", err)
+				return fmt.Errorf("error reading proto files: %v", err)
 			}
-			fmt.Println(rawMessage)
-			fmt.Println("----")
+
+			packageFiles = append(packageFiles, &v1.ProtoFile{
+				FileName:     filepath.Base(file.Path()),
+				FileContents: fileContents[0].FileContents,
+			})
 		}
 
-		// Create a new package
-		pkg := ent.Package{PackageName: string(file.Package().Name())}
-
-		// Upsert package
-		result := tx.Where(ent.Package{PackageName: pkg.PackageName}).FirstOrCreate(&pkg)
-		if result.Error != nil {
-			return fmt.Errorf("error upserting package: %v", result.Error)
-		}
-
-		// Get latest package version via package
-		var latestVersion ent.PackageVersion
-		result = tx.Where(ent.PackageVersion{PackageID: pkg.ID}).Order("version DESC").Limit(1).Find(&latestVersion)
-		if result.Error != nil {
-			return fmt.Errorf("error getting latest package version: %v", result.Error)
-		}
-		if result.RowsAffected == 0 {
-			latestVersion = ent.PackageVersion{
-				PackageID: pkg.ID,
-				Version:   1,
-			}
-		}
-
-		// Determine next version
-		nextVersion := latestVersion.Version + 1
-
-		// Create a new package version
-		pkgVersion := ent.PackageVersion{
-			PackageID: pkg.ID,
-			Version:   nextVersion,
-		}
-		result = tx.Create(&pkgVersion)
-		if result.Error != nil {
-			return fmt.Errorf("error creating package version: %v", result.Error)
-		}
-
-		// Save new latest version
-		pkg.LatestVersionID = &pkgVersion.ID
-		result = tx.Save(&pkg)
-		if result.Error != nil {
-			return fmt.Errorf("error saving package: %v", result.Error)
-		}
-
+		uploadReq.Packages = append(uploadReq.Packages, &v1.PackageFile{
+			PackageName: packageName,
+			Files:       packageFiles,
+		})
 	}
 
-	// Commit transaction
-	err = tx.Commit().Error
+	// Upload the proto files
+	uploadRes, err := client.UploadPackageVersion(ctx, uploadReq)
 	if err != nil {
-		return fmt.Errorf("error committing transaction: %v", err)
+		return fmt.Errorf("error uploading proto files: %v", err)
 	}
 
-	// Fetch packages
-	var packages []ent.Package
-	result := db.Model(&ent.Package{}).Preload("LatestVersion").Limit(10).Find(&packages)
-	if result.Error != nil {
-		return fmt.Errorf("error fetching packages: %v", result.Error)
-	}
-
-	// Print packages
-	for _, pck := range packages {
-		if pck.LatestVersion == nil {
-			fmt.Printf("Package: %s, Version: nil\n", pck.PackageName)
-		} else {
-			fmt.Printf("Package: %s, Version: %d\n", pck.PackageName, pck.LatestVersion.Version)
-		}
-	}
-
-	fmt.Println("Uploaded proto files successfully")
+	fmt.Printf("Uploaded proto files successfully. (PackageId=%d)\n", uploadRes.PackageId)
 
 	return nil
 }
 
 // UploadCommand will upload a set of proto files to the vör service
-func UploadCommand() *cli.Command {
+func UploadCommand(config *config.Config) *cli.Command {
 	return &cli.Command{
 		Name:   "upload",
 		Usage:  "Upload a proto file to the vör service",
@@ -198,6 +142,12 @@ func UploadCommand() *cli.Command {
 				Name:     protoFlag,
 				Usage:    "The proto file to upload",
 				Required: true,
+			},
+			&cli.StringFlag{
+				Name:     endpointFlag,
+				Usage:    "The endpoint to upload the proto file to",
+				Required: false,
+				Value:    config.GrpcEndpoint,
 			},
 		},
 	}

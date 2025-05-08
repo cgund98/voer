@@ -8,8 +8,8 @@ type Package struct {
 	CreatedAt time.Time `gorm:"autoCreateTime"`
 	UpdatedAt time.Time `gorm:"autoUpdateTime"`
 
-	PackageName     string
-	LatestVersionID *uint `gorm:"index"`
+	PackageName     string `gorm:"unique,index"`
+	LatestVersionID *uint  `gorm:"index"`
 
 	LatestVersion *PackageVersion  `gorm:"foreignKey:ID;references:LatestVersionID"`
 	Versions      []PackageVersion `gorm:"constraint:OnDelete:CASCADE,foreignKey:PackageID,references:ID"`

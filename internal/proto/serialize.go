@@ -9,25 +9,25 @@ import (
 
 // SerializeMessage will serialize a message into a string.
 // We'll use a json format for the serialization.
-func SerializeMessage(message ParsedMessage) string {
+func SerializeMessage(message ParsedMessage) (string, error) {
 
 	json, err := json.Marshal(message)
 	if err != nil {
-		return ""
+		return "", err
 	}
 
-	return string(json)
+	return string(json), nil
 }
 
 // DeserializeMessage will deserialize a message from a string.
-func DeserializeMessage(serializedMessage string) ParsedMessage {
+func DeserializeMessage(serializedMessage string) (ParsedMessage, error) {
 	var message ParsedMessage
 	err := json.Unmarshal([]byte(serializedMessage), &message)
 	if err != nil {
-		return ParsedMessage{}
+		return ParsedMessage{}, err
 	}
 
-	return message
+	return message, nil
 }
 
 // DumpProtoMessage will attempt to reconstruct a .proto definition from a message.

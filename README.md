@@ -59,6 +59,14 @@ Builds are done with Bazel.
 
 ```bash
 
+# Install go protobuf compiler
+make install-proto-tools
+
+# Build protobufs
+make build-proto
+
+# Build CLI
+make build
 ```
 
 ### Release

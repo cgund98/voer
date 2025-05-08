@@ -26,3 +26,9 @@ go.work.sum
 
 # Node modules
 node_modules/
+
+# Protobuf files
+*.pb.go
+
+# Build files
+dist/

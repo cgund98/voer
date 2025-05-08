@@ -8,9 +8,9 @@ type PackageVersionFile struct {
 	CreatedAt time.Time `gorm:"autoCreateTime"`
 	UpdatedAt time.Time `gorm:"autoUpdateTime"`
 
-	PackageVersionID uint
+	PackageVersionID uint           `gorm:"not null,index"`
+	PackageVersion   PackageVersion `gorm:"constraint:OnDelete:CASCADE,foreignKey:PackageVersionID,references:ID"`
 
-	ProtoContents string
-
-	PackageVersion PackageVersion `gorm:"constraint:OnDelete:CASCADE,foreignKey:PackageVersionID,references:ID"`
+	FileName     string `gorm:"not null"`
+	FileContents string `gorm:"not null"`
 }

@@ -87,3 +87,18 @@ func ValidatePackagesInSameDirectory(ctx context.Context, protoFiles linker.File
 
 	return nil
 }
+
+// Ensure no two files have the same name
+func ValidateNoDuplicateFileNames(ctx context.Context, protoFiles linker.Files) error {
+
+	seen := make(map[string]bool)
+
+	for _, protoFile := range protoFiles {
+		if _, ok := seen[string(filepath.Base(protoFile.Path()))]; ok {
+			return fmt.Errorf("proto file %s has the same name as %s", protoFile.Path(), string(protoFile.Path()))
+		}
+		seen[string(filepath.Base(protoFile.Path()))] = true
+	}
+
+	return nil
+}

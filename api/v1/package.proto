@@ -4,6 +4,8 @@ package voer.v1;
 
 import "google/protobuf/timestamp.proto";
 
+option go_package = "api/v1";
+
 // General message types
 
 message Package {
@@ -34,8 +36,18 @@ message PackageVersionFile {
 
 // UploadPackageVersion
 
+message ProtoFile {
+    string fileName = 1;
+    string fileContents = 2;
+}
+
+message PackageFile {
+    string packageName = 1;
+    repeated ProtoFile files = 2;
+}
+
 message UploadPackageVersionRequest {
-    repeated string fileContents = 1;
+    repeated PackageFile packages = 1;
 }
 
 message UploadPackageVersionResponse {
@@ -44,6 +56,6 @@ message UploadPackageVersionResponse {
 }
 
 // gRPC service for managing packages
-service PackageService {
+service PackageSvc {
     rpc UploadPackageVersion(UploadPackageVersionRequest) returns (UploadPackageVersionResponse) {}
 }

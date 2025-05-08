@@ -5,6 +5,11 @@ import (
 )
 
 type Config struct {
+	// Client-side value for the server's gRPC endpoint
+	GrpcEndpoint string `default:"localhost:8000"`
+	GrpcTls      bool   `default:"true"`
+
+	// Server-side value for the port to listen on
 	ServerPort string `default:"8080"`
 
 	SqliteDBPath string `default:""`
