@@ -10,7 +10,8 @@ type Config struct {
 	GrpcTls      bool   `default:"true"`
 
 	// Server-side value for the port to listen on
-	ServerPort string `default:"8080"`
+	GrpcPort     int `default:"8000"`
+	FrontendPort int `default:"8080"`
 
 	SqliteDBPath string `default:""`
 }

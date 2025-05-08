@@ -32,3 +32,6 @@ node_modules/
 
 # Build files
 dist/
+
+# Templ files
+*_templ.go
