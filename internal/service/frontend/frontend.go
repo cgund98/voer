@@ -5,6 +5,8 @@ import (
 	"net/http"
 
 	"github.com/a-h/templ"
+	"github.com/ggicci/httpin"
+	httpin_integration "github.com/ggicci/httpin/integration"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-playground/validator"
@@ -35,6 +37,11 @@ func NewService(config *config.Config, db *gorm.DB) *Service {
 
 // Init will initiate all routes
 func (fe *Service) Init() {
+
+	// Register a directive named "path" to retrieve values from `chi.URLParam`,
+	// i.e. decode path variables.
+	httpin_integration.UseGochiURLParam("path", chi.URLParam)
+
 	// Middleware
 	fe.router.Use(slogchi.New(logging.Logger))
 	fe.router.Use(middleware.Recoverer)
@@ -43,6 +50,10 @@ func (fe *Service) Init() {
 
 	// Routes
 	fe.router.Handle("/", templ.Handler(page.Messages()))
+
+	fe.router.With(httpin.NewInput(ListMessagesInput{})).Get("/messages", http.HandlerFunc(fe.HandleListMessages))
+
+	// static files
 	fe.router.Handle("/static/app.css", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/css")
 		if _, err := w.Write([]byte(css)); err != nil {

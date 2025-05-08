@@ -1,6 +1,6 @@
 package input
 
-templ SearchInput() {
+templ SearchInput(target string, indicator string, url string) {
 	<label class="input max-w-64">
 		<svg class="h-[1em] opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
 			<g
@@ -14,6 +14,15 @@ templ SearchInput() {
 				<path d="m21 21-4.3-4.3"></path>
 			</g>
 		</svg>
-		<input type="search" class="grow placeholder:text-base-content placeholder:opacity-50" placeholder="Search"/>
-	</label>
+		<input
+			type="search"
+			class="grow placeholder:text-base-content placeholder:opacity-50"
+			placeholder="Search"
+            name="search"
+			hx-get={ url }
+			hx-trigger="keyup changed delay:500ms, search"
+			hx-target={ target }
+			hx-swap="innerHTML"
+			hx-indicator={ indicator }
+		/> 	</label>
 }
