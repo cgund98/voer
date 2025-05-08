@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package helloworld;
+
+// Remove a field from the message. This is a backwards incompatible change and will result in an error.
+message GreetingRequest {
+  string message = 1;
+}

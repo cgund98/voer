@@ -71,7 +71,23 @@ func createMessageEntities(ctx context.Context, tx *gorm.DB, reqPkg *v1.PackageF
 		parsedMsgs = append(parsedMsgs, msgs...)
 	}
 
+	// Fetch all existing messages for this package
+	curMessages := make([]entity.Message, 0)
+	err := tx.Model(&entity.Message{}).Where("package_id = ?", packageID).Find(&curMessages).Error
+	if err != nil {
+		return fmt.Errorf("failed to get current messages: %w", err)
+	}
+
+	// Build a lookup of current message names
+	curMessageNames := make(map[string]bool)
+	for _, msg := range curMessages {
+		curMessageNames[msg.Name] = true
+	}
+
 	for _, msg := range parsedMsgs {
+		// Remove from lookup table
+		delete(curMessageNames, msg.Name)
+
 		// Check each message for backwards compatibility
 		err := checkBackwardsCompatible(ctx, tx, packageID, msg)
 		if err != nil {
@@ -124,10 +140,11 @@ func createMessageEntities(ctx context.Context, tx *gorm.DB, reqPkg *v1.PackageF
 		if result.Error != nil {
 			return fmt.Errorf("failed to save message: %w", result.Error)
 		}
+	}
 
-		// Log new message version
-		fmt.Printf("%s v%d\n", msg.Name, nextMessageVersion)
-
+	// Check that no messages were deleted
+	for msgName := range curMessageNames {
+		return fmt.Errorf("backwards incompatible change: message %s was deleted", msgName)
 	}
 
 	return nil
