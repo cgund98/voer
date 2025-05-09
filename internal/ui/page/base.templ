@@ -1,38 +1,37 @@
 package page
 
 templ BasePage() {
+	<!DOCTYPE html>
+	<html lang="en">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<title>Vör</title>
+			<!-- inter font -->
+			<link rel="preconnect" href="https://rsms.me/"/>
+			<link rel="stylesheet" href="https://rsms.me/inter/inter.css"/>
+			<!-- app css -->
+			<link rel="stylesheet" href="/static/app.css"/>
+			<!-- daisyui -->
+			<link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css"/>
+			<link href="https://cdn.jsdelivr.net/npm/daisyui@5/themes.css" rel="stylesheet" type="text/css"/>
+			<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4?plugins=forms,typography,aspect-ratio,line-clamp"></script>
+			<!-- Highlight.js -->
+			<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/tomorrow-night-bright.min.css"/>
 
-    <!DOCTYPE html>
-    <html lang="en">
-        <head>
-            <meta charset="UTF-8"/>
-            <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-            <title>Vör</title>
+		</head>
+		<body data-theme="night">
+			{ children... }
+			<!-- htmx -->
+			<script src="https://unpkg.com/htmx.org@2.0.4"></script>
+			<!-- Alpine -->
+			<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
 
-            <!-- inter font -->
-            <link rel="preconnect" href="https://rsms.me/">
-            <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+			<!-- Highlight.js -->
+			<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+			<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/protobuf.min.js"></script>
 
-            <!-- app css -->
-            <link rel="stylesheet" href="/static/app.css">
-
-            <!-- daisyui -->
-            <link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css" />
-            <link href="https://cdn.jsdelivr.net/npm/daisyui@5/themes.css" rel="stylesheet" type="text/css" />
-            <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4?plugins=forms,typography,aspect-ratio,line-clamp"></script>
-        </head>
-
-        <body data-theme="night">
-            { children... }
-
-            <!-- htmx -->
-            <script src="https://unpkg.com/htmx.org@2.0.4"></script>
-
-            <!-- Alpine -->
-            <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
-        </body>
-
-
-
-    </html>
+            <script>hljs.highlightAll();</script>
+		</body>
+	</html>
 }

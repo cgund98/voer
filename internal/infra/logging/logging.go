@@ -21,3 +21,8 @@ func getLevel() slog.Level {
 var Logger *slog.Logger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
 	Level: getLevel(),
 }))
+
+func Fatalf(msg string, args ...any) {
+	Logger.Error(msg, args...)
+	os.Exit(1)
+}

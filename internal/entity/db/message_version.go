@@ -11,10 +11,13 @@ type MessageVersion struct {
 	CreatedAt time.Time `gorm:"autoCreateTime"`
 	UpdatedAt time.Time `gorm:"autoUpdateTime"`
 
-	MessageID uint    `gorm:"not null,index,uniqueIndex:message_version_unique"`
+	MessageID uint    `gorm:""`
 	Message   Message `gorm:"constraint:OnDelete:CASCADE,references:MessageID"`
 
-	Version int `gorm:"not null,uniqueIndex:message_version_unique"`
+	PackageVersionID uint           `gorm:""`
+	PackageVersion   PackageVersion `gorm:"constraint:OnDelete:CASCADE,references:PackageVersionID"`
+
+	Version int `gorm:""`
 
 	ProtoBody        string `gorm:"not null"`
 	SerializedSchema string `gorm:"not null"`

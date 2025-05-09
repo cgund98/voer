@@ -13,5 +13,13 @@ var css string = `
   }
 }
 
+dialog {
+  background-color: transparent;
+}
 
+[x-cloak] { display: none !important; }
+
+pre code {
+  background-color: transparent !important;
+}
 `

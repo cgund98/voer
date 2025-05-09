@@ -7,24 +7,21 @@ import (
 
 templ Messages() {
 	@BasePage() {
-		<div class="container mx-auto px-4 min-h-dvh">
-			<div class="flex flex-col w-full" x-data="{ messageCount: 0 }" @message-count="messageCount = $event.detail.value">
+		<div class="container mx-auto px-4">
+			<div class="flex min-h-screen flex-col w-full" x-data="{ messageCount: 0 }" @message-count="messageCount = $event.detail.value">
 				<div class="flex-none pt-4 w-full">
 					@nav.Navbar()
 				</div>
 				<div class="w-full flex flex-col items-start gap-4 mt-8">
 					<div class="flex flex-row justify-between w-full">
 						<div class="flex flex-col gap-4">
-							<h3 class="text-2xl font-bold flex flex-row gap-2 items-center">Messages <span x-text="messageCount" class="badge badge-soft badge-primary mt-1" ></span></h3>
+							<h3 class="text-2xl font-bold flex flex-row gap-2 items-center">Messages <span x-text="messageCount" class="badge badge-soft badge-primary mt-1"></span></h3>
 						</div>
 						<div class="flex flex-row gap-4 items-center">
-
 							@input.SearchInput("#messages-list", "#message-list-spinner", "/messages?page=1")
 						</div>
 					</div>
-
 					<div class="w-full flex flex-col items-start gap-4" hx-get="/messages?page=1" id="messages-list" hx-trigger="load" hx-target="this" hx-swap="innerHTML" hx-indicator="#message-list-spinner"></div>
-
 					// Loading indicator
 					<div id="message-list-spinner" class="flex flex-row justify-center htmx-indicator w-full">
 						<span class="loading loading-spinner loading-lg"></span>
@@ -32,5 +29,14 @@ templ Messages() {
 				</div>
 			</div>
 		</div>
+		// Message detail wrapper
+		// <div
+		// 	id="message-detail-modal-wrapper"
+		// 	x-data="{ closeMessageDetailModal: function() {
+		// 				$el.innerHTML = '';
+		// 			} }"
+		// >
+		// 	@message.MessageDetailModal()
+		// </div>
 	}
 }
