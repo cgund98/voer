@@ -49,7 +49,7 @@ func checkBackwardsCompatible(ctx context.Context, db *gorm.DB, packageID uint, 
 
 // createMessageEntities creates message entities for a given package.
 // This includes creating the message and message version entities.
-func createMessageEntities(ctx context.Context, tx *gorm.DB, reqPkg *v1.PackageFile, packageID uint, fileContentsMap map[string]string, protoFiles []linker.File) error {
+func createMessageEntities(ctx context.Context, tx *gorm.DB, reqPkg *v1.PackageFile, packageID uint, packageVersionID uint, fileContentsMap map[string]string, protoFiles []linker.File) error {
 
 	// Build mapping of msg name to file name
 	msgNameToFileNameMap := make(map[string]string)
@@ -128,6 +128,7 @@ func createMessageEntities(ctx context.Context, tx *gorm.DB, reqPkg *v1.PackageF
 			Version:          nextMessageVersion,
 			ProtoBody:        protoBody,
 			SerializedSchema: serializedSchema,
+			PackageVersionID: packageVersionID,
 		}
 		result = tx.Create(&messageVersion)
 		if result.Error != nil {
@@ -152,20 +153,20 @@ func createMessageEntities(ctx context.Context, tx *gorm.DB, reqPkg *v1.PackageF
 
 // createPackageEntities creates package version entities for a given package.
 // This includes creating the package and package version entities.
-func createPackageEntities(tx *gorm.DB, reqPkg *v1.PackageFile) (*entity.Package, error) {
+func createPackageEntities(tx *gorm.DB, reqPkg *v1.PackageFile) (*entity.Package, *entity.PackageVersion, error) {
 	// Persist package
 	pkg := entity.Package{
 		PackageName: reqPkg.PackageName,
 	}
 	result := tx.Where(entity.Package{PackageName: pkg.PackageName}).FirstOrCreate(&pkg)
 	if result.Error != nil {
-		return nil, fmt.Errorf("failed to create package: %w", result.Error)
+		return nil, nil, fmt.Errorf("failed to create package: %w", result.Error)
 	}
 
 	// Persist package version
 	nextPackageVersion, err := entity.GetNextPackageVersion(tx, pkg.ID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get next package version: %w", err)
+		return nil, nil, fmt.Errorf("failed to get next package version: %w", err)
 	}
 
 	pkgVersion := entity.PackageVersion{
@@ -174,14 +175,14 @@ func createPackageEntities(tx *gorm.DB, reqPkg *v1.PackageFile) (*entity.Package
 	}
 	err = tx.Create(&pkgVersion).Error
 	if err != nil {
-		return nil, fmt.Errorf("failed to create package version: %w", err)
+		return nil, nil, fmt.Errorf("failed to create package version: %w", err)
 	}
 
 	// Persist latest package version
 	pkg.LatestVersionID = &pkgVersion.ID
 	result = tx.Save(&pkg)
 	if result.Error != nil {
-		return nil, fmt.Errorf("failed to save package: %w", result.Error)
+		return nil, nil, fmt.Errorf("failed to save package: %w", result.Error)
 	}
 
 	// Persist package version files
@@ -194,11 +195,11 @@ func createPackageEntities(tx *gorm.DB, reqPkg *v1.PackageFile) (*entity.Package
 
 		result = tx.Create(&pkgVersionFile)
 		if result.Error != nil {
-			return nil, fmt.Errorf("failed to create package version file: %w", result.Error)
+			return nil, nil, fmt.Errorf("failed to create package version file: %w", result.Error)
 		}
 	}
 
-	return &pkg, nil
+	return &pkg, &pkgVersion, nil
 }
 
 func CreatePackageVersion(ctx context.Context, db *gorm.DB, req *v1.UploadPackageVersionRequest) (*v1.UploadPackageVersionResponse, error) {
@@ -236,13 +237,13 @@ func CreatePackageVersion(ctx context.Context, db *gorm.DB, req *v1.UploadPackag
 			}
 
 			// Create package entities
-			pkg, err := createPackageEntities(tx, reqPkg)
+			pkg, pkgVersion, err := createPackageEntities(tx, reqPkg)
 			if err != nil {
 				return nil, fmt.Errorf("failed to create package version entities: %w", err)
 			}
 
 			// Create message entities
-			err = createMessageEntities(ctx, tx, reqPkg, pkg.ID, fileContentsMap, protoFiles)
+			err = createMessageEntities(ctx, tx, reqPkg, pkg.ID, pkgVersion.ID, fileContentsMap, protoFiles)
 			if err != nil {
 				return nil, err
 			}

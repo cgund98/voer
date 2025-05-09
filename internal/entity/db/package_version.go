@@ -17,6 +17,8 @@ type PackageVersion struct {
 
 	Package Package              `gorm:"constraint:OnDelete:CASCADE,foreignKey:PackageID,references:ID"`
 	Files   []PackageVersionFile `gorm:"constraint:OnDelete:CASCADE,foreignKey:PackageVersionID,references:ID"`
+
+	MessageVersions []MessageVersion `gorm:"constraint:OnDelete:CASCADE,foreignKey:PackageVersionID,references:ID"`
 }
 
 // GetNextPackageVersion returns the next package version for a given package ID
