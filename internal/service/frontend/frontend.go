@@ -50,8 +50,15 @@ func (fe *Service) Init() {
 
 	// Routes
 	fe.router.Handle("/", templ.Handler(page.Messages()))
+	fe.router.Handle("/view/packages", templ.Handler(page.Packages()))
+	fe.router.With(httpin.NewInput(PackagePageInput{})).Get("/view/packages/{package_id}", http.HandlerFunc(fe.HandlePackagePage))
 
 	fe.router.With(httpin.NewInput(ListMessagesInput{})).Get("/messages", http.HandlerFunc(fe.HandleListMessages))
+	fe.router.With(httpin.NewInput(ListPackagesInput{})).Get("/packages", http.HandlerFunc(fe.HandleListPackages))
+	fe.router.With(httpin.NewInput(ListPackageVersionFilesInput{})).Get("/packages-version-files", http.HandlerFunc(fe.HandleListPackageVersionFiles))
+
+	fe.router.With(httpin.NewInput(ListPackageVersionsInput{})).Get("/packages-versions", http.HandlerFunc(fe.HandleListPackageVersions))
+	fe.router.With(httpin.NewInput(DeletePackageVersionInput{})).Delete("/packages-versions/{package_version_id}", http.HandlerFunc(fe.HandleDeletePackageVersion))
 
 	// static files
 	fe.router.Handle("/static/app.css", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

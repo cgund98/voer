@@ -1,30 +1,31 @@
-package message
+package pkg
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/cgund98/voer/internal/ui"
 )
 
-type MessageCardInput struct {
-	Title     string
-	Package   string
-	Version   int
-	ProtoBody string
-	UpdatedAt time.Time
+type PackageCardInput struct {
+	PackageID    uint
+	PackageName  string
+	Version      int
+	MessageCount int
+	UpdatedAt    time.Time
 }
 
-templ MessageListCard(input MessageCardInput) {
-	<div class="card card-compact bg-base-200 w-full" x-data="{expanded: false}">
+templ PackageListCard(input PackageCardInput) {
+	<a href={ templ.SafeURL("/view/packages/" + strconv.FormatUint(uint64(input.PackageID), 10)) } class="card card-compact bg-base-200 w-full">
 		<div class="card-body">
 			<div class="flex flex-col gap-0">
 				// Title row
-				<div class="flex flex-row justify-between cursor-pointer" x-on:click="expanded = !expanded">
+				<div class="flex flex-row justify-between cursor-pointer">
 					<div class="flex flex-col gap-0">
 						<h3 class="text-xl font-bold flex flex-row gap-2 items-center">
-							<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-5"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"></path><rect x="2" y="4" width="20" height="16" rx="2"></rect></svg>
-							{ input.Title }
+							<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-5"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"></path><path d="M12 22V12"></path><polyline points="3.29 7 12 12 20.71 7"></polyline><path d="m7.5 4.27 9 5.15"></path></svg>
+							{ input.PackageName }
 						</h3>
 					</div>
 					<div class="flex flex-row gap-2 items-center">
@@ -34,24 +35,19 @@ templ MessageListCard(input MessageCardInput) {
 						</button>
 					</div>
 				</div>
-				<div class="transition-all duration-300 ease-in-out py-1" :class="{'hidden': !expanded}" x-cloak>
-					<div class="rounded-lg p-2" style="background: rgba(0, 0, 0, 0.2);">
-						<pre><code class="language-proto">{ input.ProtoBody }</code></pre>
-					</div>
-				</div>
 				// Separator
 				<div class="divider my-1"></div>
 				// Attributes row
 				<div class="flex flex-row justify-between">
 					<div class="flex flex-row gap-2">
-						<a href="#" class="badge badge-accent flex flex-row gap-1 items-center hover:underline">
-							<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-4"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"></path><path d="M12 22V12"></path><polyline points="3.29 7 12 12 20.71 7"></polyline><path d="m7.5 4.27 9 5.15"></path></svg>
-							<span class="-mt-0.5">{ input.Package }</span>
-						</a>
-						<a href="#" class="badge badge-secondary flex flex-row gap-1 items-center hover:underline">
+						<div class="badge badge-accent flex flex-row gap-1 items-center">
+							<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-4"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"></path><rect x="2" y="4" width="20" height="16" rx="2"></rect></svg>
+							<span class="-mt-0.5">{ input.MessageCount } messages</span>
+						</div>
+						<button class="badge badge-secondary flex flex-row gap-1 items-center">
 							<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-4"><circle cx="12" cy="12" r="3"></circle><line x1="3" x2="9" y1="12" y2="12"></line><line x1="15" x2="21" y1="12" y2="12"></line></svg>
 							<span class="-mt-0.5">V{ input.Version }</span>
-						</a>
+						</button>
 					</div>
 					<div class="flex flex-row gap-2">
 						<div class="flex flex-row gap-2 items-center text-base-content opacity-50">
@@ -62,19 +58,19 @@ templ MessageListCard(input MessageCardInput) {
 				</div>
 			</div>
 		</div>
-	</div>
+	</a>
 }
 
-templ CardsList(nextPage *int32, cardInputs []MessageCardInput) {
+templ CardsList(nextPage *int32, cardInputs []PackageCardInput) {
 	if len(cardInputs) == 0 {
-		<p class="text-base-content opacity-50">No messages found</p>
+		<p class="text-base-content opacity-50">No packages found</p>
 	} else {
 		for _, cardInput := range cardInputs {
-			@MessageListCard(cardInput)
+			@PackageListCard(cardInput)
 		}
 	}
 	if nextPage != nil {
-		<div hx-get={ fmt.Sprintf("/messages?page=%d", *nextPage) } hx-include="[name='search']" hx-target="this" hx-trigger="revealed" hx-swap="afterend" hx-indicator="#message-list-spinner"></div>
+		<div hx-get={ fmt.Sprintf("/packages?page=%d", *nextPage) } hx-include="[name='search']" hx-target="this" hx-trigger="revealed" hx-swap="afterend" hx-indicator="#package-list-spinner"></div>
 	}
 	<script>hljs.highlightAll();</script>
 }

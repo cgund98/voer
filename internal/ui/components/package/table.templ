@@ -1,0 +1,46 @@
+package pkg
+
+import (
+	"time"
+
+	"github.com/cgund98/voer/internal/ui"
+)
+
+type PackageAttributesTableInput struct {
+	PackageVersion      *int
+	PackageUpdatedAt    *time.Time
+	PackageMessageCount int
+}
+
+templ PackageAttributesTable(input PackageAttributesTableInput) {
+	<div class="overflow-x-auto rounded-box bg-base-200">
+		<table class="table">
+			<tbody>
+				<tr>
+					<td class="font-bold">Current Version</td>
+					<td>
+						if input.PackageVersion != nil {
+							<span>{ *input.PackageVersion }</span>
+                        } else {
+                            <span></span>
+                        }
+					</td>
+				</tr>
+				<tr>
+					<td class="font-bold">Updated At</td>
+					<td>
+						if input.PackageUpdatedAt != nil {
+							<span>{ ui.FormatDate(*input.PackageUpdatedAt) }</span>
+                        } else {
+                            <span></span>
+                        }
+					</td>
+				</tr>
+				<tr>
+					<td class="font-bold">Message Count</td>
+					<td>{ input.PackageMessageCount }</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+}

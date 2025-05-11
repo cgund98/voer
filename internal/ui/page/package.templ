@@ -1,0 +1,66 @@
+package page
+
+import (
+	"fmt"
+	"time"
+
+	"github.com/cgund98/voer/internal/ui/components/nav"
+
+	packageComponents "github.com/cgund98/voer/internal/ui/components/package"
+)
+
+type PackagePageInput struct {
+	PackageID           uint
+	PackageName         string
+	PackageVersion      *int
+	PackageUpdatedAt    *time.Time
+	PackageMessageCount int
+	LatestVersionID     *uint
+}
+
+templ PackagePage(input PackagePageInput) {
+	@BasePage() {
+		<div class="container mx-auto px-4" x-data="{ tabIndex: 0 }" @package-version-deleted="window.location.reload()">
+			<div class="flex min-h-screen flex-col w-full" x-data="{ packageCount: 0 }" @package-count="packageCount = $event.detail.value">
+				<div class="flex-none pt-4 w-full">
+					@nav.Navbar()
+				</div>
+				<div class="w-full flex flex-col items-start gap-4 mt-8">
+					<div class="flex flex-row justify-between w-full">
+						<div class="flex flex-col gap-4">
+							<h1 class="text-2xl font-bold flex flex-row gap-2 items-center">
+								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-5"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"></path><path d="M12 22V12"></path><polyline points="3.29 7 12 12 20.71 7"></polyline><path d="m7.5 4.27 9 5.15"></path></svg>
+								{ input.PackageName }
+							</h1>
+						</div>
+						<div class="flex flex-row gap-4 items-center"></div>
+					</div>
+					<div role="tablist" class="tabs tabs-border">
+						<a role="tab" class="tab" x-on:click="tabIndex = 0" :class="{ 'tab-active': tabIndex === 0 }">Overview</a>
+						<a role="tab" class="tab" x-on:click="tabIndex = 1" :class="{ 'tab-active': tabIndex === 1 }">Files</a>
+						<a role="tab" class="tab" x-on:click="tabIndex = 2" :class="{ 'tab-active': tabIndex === 2 }">Versions</a>
+					</div>
+					<div class="w-full flex flex-col items-start gap-4" x-show="tabIndex === 0">
+						@packageComponents.PackageAttributesTable(packageComponents.PackageAttributesTableInput{
+							PackageVersion:      input.PackageVersion,
+							PackageUpdatedAt:    input.PackageUpdatedAt,
+							PackageMessageCount: input.PackageMessageCount,
+						})
+					</div>
+					<div class="w-full flex flex-col items-start gap-4" x-show="tabIndex === 1">
+						if input.LatestVersionID != nil {
+							<div class="w-full flex flex-col items-start gap-4" hx-get={ fmt.Sprintf("/packages-version-files?package_version_id=%d", *input.LatestVersionID) } hx-trigger="load" hx-target="this"></div>
+						} else {
+							<div class="w-full flex flex-col items-start gap-4">
+								<p class="text-base-content opacity-50">No version found</p>
+							</div>
+						}
+					</div>
+                    <div class="w-full flex flex-col items-start gap-4" x-show="tabIndex === 2">
+                        <div class="w-full flex flex-col items-start gap-4" hx-get={ fmt.Sprintf("/packages-versions?package_id=%d", input.PackageID) } hx-trigger="load" hx-target="this"></div>
+                    </div>
+				</div>
+			</div>
+		</div>
+	}
+}

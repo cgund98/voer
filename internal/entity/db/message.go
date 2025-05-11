@@ -62,3 +62,49 @@ func CountMessages(db *gorm.DB, searchTerm string) (int64, error) {
 
 	return count, nil
 }
+
+func CountMessagesByPackage(db *gorm.DB, packageID uint) (int64, error) {
+	var count int64
+
+	query := db.Model(&Message{}).Where("package_id = ?", packageID)
+
+	err := query.Count(&count).Error
+	if err != nil {
+		return 0, fmt.Errorf("failed to count messages: %w", err)
+	}
+
+	return count, nil
+}
+
+// AssignLatestVersion will find all the messages for a given package and assign the latest version to the message
+func AssignLatestVersion(db *gorm.DB, packageID uint) error {
+	// Fetch all messages for the package
+	var messages []Message
+	err := db.Model(&Message{}).Where("package_id = ?", packageID).Find(&messages).Error
+	if err != nil {
+		return fmt.Errorf("failed to assign latest version: %w", err)
+	}
+
+	for _, message := range messages {
+		// Fetch the latest version for the message
+		var msgVersions []MessageVersion
+		err = db.Model(&MessageVersion{}).Where("message_id = ?", message.ID).Find(&msgVersions).Error
+		if err != nil {
+			return fmt.Errorf("failed to assign latest version: %w", err)
+		}
+
+		if len(msgVersions) > 0 {
+			message.LatestVersionID = &msgVersions[0].ID
+		} else {
+			message.LatestVersionID = nil
+		}
+
+		// Save the message
+		err = db.Save(&message).Error
+		if err != nil {
+			return fmt.Errorf("failed to assign latest version: %w", err)
+		}
+	}
+
+	return nil
+}

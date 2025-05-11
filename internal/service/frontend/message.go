@@ -61,6 +61,7 @@ func (s *Service) HandleListMessages(w http.ResponseWriter, r *http.Request) {
 		if message.LatestVersion != nil {
 			msgInput.Version = message.LatestVersion.Version
 			msgInput.UpdatedAt = message.LatestVersion.UpdatedAt
+			msgInput.ProtoBody = message.LatestVersion.ProtoBody
 		}
 		cardInputs[i] = msgInput
 	}

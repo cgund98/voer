@@ -36,7 +36,7 @@ func serverAction(ctx context.Context, config *config.Config, cmd *cli.Command) 
 	}
 
 	// Initialize gRPC server
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(grpc.UnaryInterceptor(svc.LoggerInterceptor))
 
 	// Register services
 	v1.RegisterPackageSvcServer(grpcServer, &svc.PackageSvc{
