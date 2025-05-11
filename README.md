@@ -6,13 +6,12 @@ Schema Registry for Protobufs
 
 ### How it works
 
-First, we'd need to
+1. Developer creates a new `.proto` package.
+2. When ready, developer publishes package to registry.
+3. Consumers pull package schema from registry.
 
-1. Create a new `.proto` file containing schema.
-2. Validate `.proto` file.
-3. Upload `.proto` file to Vör server.
-
-Once we've
+Over time, the schema owner can publish new package versions, while the Schema Registry will ensure that no breaking
+changes are made.
 
 ### Example use case
 
@@ -50,7 +49,8 @@ pre-commit run --all-files
 ### Tests
 
 ```bash
-go test ./...
+# Run unit tests
+make test
 ```
 
 ### Build
@@ -59,8 +59,8 @@ Builds are done with Bazel.
 
 ```bash
 
-# Install go protobuf compiler
-make install-proto-tools
+# Install additional Go CLIs (protoc, templ, etc.)
+make install-go-tools
 
 # Build protobufs
 make build-proto

@@ -1,0 +1,15 @@
+package message
+
+templ MessageDetailModal() {
+	<div class="fixed left-0 top-0 right-0 bottom-0 bg-black/20 z-50 flex flex-col items-center justify-center">
+		<div class="bg-base-100 rounded-lg p-4 max-w-2xl rounded-lg shadow-lg">
+			<div class="flex flex-row justify-between">
+				<h3 class="text-lg font-bold">GreetingResponse</h3>
+				<button class="btn btn-sm btn-circle btn-ghost" x-on:click="closeMessageDetailModal()">✕</button>
+			</div>
+			<p class="py-4">This is a message detail modal</p>
+
+
+		</div>
+	</div>
+}

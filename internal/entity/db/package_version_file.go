@@ -1,6 +1,10 @@
 package db
 
-import "time"
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
 
 // PackageVersion is the database model for a package version entity
 type PackageVersionFile struct {
@@ -13,4 +17,12 @@ type PackageVersionFile struct {
 
 	FileName     string `gorm:"not null"`
 	FileContents string `gorm:"not null"`
+}
+
+func ListPackageVersionFiles(db *gorm.DB, packageVersionID uint) ([]PackageVersionFile, error) {
+	var files []PackageVersionFile
+	if err := db.Where("package_version_id = ?", packageVersionID).Find(&files).Error; err != nil {
+		return nil, err
+	}
+	return files, nil
 }
