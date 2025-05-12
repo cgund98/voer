@@ -41,7 +41,9 @@ jobs:
               run: go mod download
 
             - name: Build
-              run: CGO_ENABLED=1 GOOS=linux go build -o voer
+              run: |
+                cd cmd/voer
+                CGO_ENABLED=1 GOOS=linux go build -o voer
 
     build-docker:
         runs-on: ubuntu-latest
