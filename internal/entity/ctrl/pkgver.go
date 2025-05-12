@@ -10,6 +10,7 @@ import (
 	entity "github.com/cgund98/voer/internal/entity/db"
 	"github.com/cgund98/voer/internal/infra/sqlite"
 	"github.com/cgund98/voer/internal/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"gorm.io/gorm"
 )
@@ -35,13 +36,13 @@ func checkBackwardsCompatible(ctx context.Context, db *gorm.DB, packageID uint, 
 	// Parse schema
 	msgSchema, err := proto.DeserializeMessage(msgVersion.SerializedSchema)
 	if err != nil {
-		return fmt.Errorf("failed to deserialize message schema: %w", err)
+		return fmt.Errorf("failed to deserialize message schema %s: %w", parsedMsg.Name, err)
 	}
 
 	// Check if message version is backwards compatible
 	err = proto.ValidateBackwardsCompatibleMessage(ctx, msgSchema, parsedMsg)
 	if err != nil {
-		return fmt.Errorf("failed to validate backwards compatible message: %w", err)
+		return fmt.Errorf("failed to validate backwards compatible message %s: %w", parsedMsg.Name, err)
 	}
 
 	return nil
@@ -203,13 +204,13 @@ func createPackageEntities(tx *gorm.DB, reqPkg *v1.PackageFile) (*entity.Package
 }
 
 func CreatePackageVersion(ctx context.Context, db *gorm.DB, req *v1.UploadPackageVersionRequest) (*v1.UploadPackageVersionResponse, error) {
-
-	// Generate list of inputs for proto.ParseStrings
-	parseInputs := make([]proto.ParseStringInput, 0)
+	res := &v1.UploadPackageVersionResponse{}
 
 	_, err := sqlite.WithTx(db, func(tx *gorm.DB) (*entity.Package, error) {
 
 		for _, reqPkg := range req.Packages {
+			// Generate list of inputs for proto.ParseStrings
+			parseInputs := make([]proto.ParseStringInput, 0)
 
 			for _, file := range reqPkg.Files {
 				parseInputs = append(parseInputs, proto.ParseStringInput{
@@ -242,6 +243,14 @@ func CreatePackageVersion(ctx context.Context, db *gorm.DB, req *v1.UploadPackag
 				return nil, fmt.Errorf("failed to create package version entities: %w", err)
 			}
 
+			res.PackageVersions = append(res.PackageVersions, &v1.PackageVersion{
+				Id:        uint64(pkg.ID),
+				Version:   uint64(pkgVersion.Version),
+				CreatedAt: timestamppb.New(pkg.CreatedAt),
+				UpdatedAt: timestamppb.New(pkg.UpdatedAt),
+				PackageId: uint64(pkg.ID),
+			})
+
 			// Create message entities
 			err = createMessageEntities(ctx, tx, reqPkg, pkg.ID, pkgVersion.ID, fileContentsMap, protoFiles)
 			if err != nil {
@@ -256,5 +265,135 @@ func CreatePackageVersion(ctx context.Context, db *gorm.DB, req *v1.UploadPackag
 		return nil, err
 	}
 
-	return &v1.UploadPackageVersionResponse{}, nil
+	return res, nil
+}
+
+func ValidatePackageVersion(ctx context.Context, db *gorm.DB, req *v1.ValidatePackageVersionRequest) (*v1.ValidatePackageVersionResponse, error) {
+
+	for _, reqPkg := range req.Packages {
+		// Generate list of inputs for proto.ParseStrings
+		parseInputs := make([]proto.ParseStringInput, 0)
+
+		for _, file := range reqPkg.Files {
+			parseInputs = append(parseInputs, proto.ParseStringInput{
+				FileName:     file.FileName,
+				FileContents: file.FileContents,
+			})
+		}
+
+		// Build mapping of file name to file contents
+		fileContentsMap := make(map[string]string)
+		for _, file := range reqPkg.Files {
+			fileContentsMap[file.FileName] = file.FileContents
+		}
+
+		// Parse strings into proto files
+		protoFiles, err := proto.ParseStrings(ctx, parseInputs...)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse proto files: %w", err)
+		}
+
+		// Validate no duplicate file names
+		err = proto.ValidateNoDuplicateFileNames(ctx, protoFiles)
+		if err != nil {
+			return nil, fmt.Errorf("failed to validate proto files: %w", err)
+		}
+
+		// Parse messages from files
+		parsedMsgs := make([]proto.ParsedMessage, 0)
+		for _, protoFile := range protoFiles {
+			msgs := proto.ParseMessagesFromFile(protoFile)
+			parsedMsgs = append(parsedMsgs, msgs...)
+		}
+
+		// Check if package exists
+		pkgs := make([]entity.Package, 0)
+		err = db.Model(&entity.Package{}).Where("package_name = ?", reqPkg.PackageName).Find(&pkgs).Error
+		if err != nil {
+			return nil, fmt.Errorf("failed to get packages: %w", err)
+		}
+
+		if len(pkgs) == 0 {
+			return &v1.ValidatePackageVersionResponse{
+				IsValid: true,
+				Error:   "",
+			}, nil
+		}
+		pkg := pkgs[0]
+
+		// Validate messages
+		for _, msg := range parsedMsgs {
+			err = checkBackwardsCompatible(ctx, db, pkg.ID, msg)
+			if err != nil {
+				return &v1.ValidatePackageVersionResponse{
+					IsValid: false,
+					Error:   err.Error(),
+				}, nil
+			}
+		}
+
+	}
+
+	return &v1.ValidatePackageVersionResponse{
+		IsValid: true,
+		Error:   "",
+	}, nil
+}
+
+// GetPackageVersion gets a package version by package name and version.
+// Returns the package version and all files in the package version.
+func GetPackageVersion(ctx context.Context, db *gorm.DB, req *v1.GetPackageVersionRequest) (*v1.GetPackageVersionResponse, error) {
+
+	// Fetch package
+	pkgs := []entity.Package{}
+	err := db.Model(&entity.Package{}).Where("package_name = ?", req.PackageName).Find(&pkgs).Error
+	if err != nil {
+		return nil, fmt.Errorf("failed to get packages: %w", err)
+	}
+
+	if len(pkgs) == 0 {
+		return nil, fmt.Errorf("package not found")
+	}
+
+	pkg := pkgs[0]
+
+	// Fetch package version
+	pkgVersions := []entity.PackageVersion{}
+	err = db.Model(&entity.PackageVersion{}).Where("package_id = ? AND version = ?", pkg.ID, req.Version).Find(&pkgVersions).Error
+	if err != nil {
+		return nil, fmt.Errorf("failed to get package versions: %w", err)
+	}
+
+	if len(pkgVersions) == 0 {
+		return nil, fmt.Errorf("package version not found")
+	}
+
+	pkgVer := pkgVersions[0]
+
+	files := []entity.PackageVersionFile{}
+	err = db.Model(&entity.PackageVersionFile{}).Where("package_version_id = ?", pkgVer.ID).Find(&files).Error
+	if err != nil {
+		return nil, fmt.Errorf("failed to get package version files: %w", err)
+	}
+
+	res := &v1.GetPackageVersionResponse{
+		PackageVersion: &v1.PackageVersion{
+			Id:      uint64(pkgVer.ID),
+			Version: uint64(pkgVer.Version),
+		},
+	}
+
+	for _, file := range files {
+		res.Files = append(res.Files, &v1.PackageVersionFile{
+			Id:               uint64(file.ID),
+			ProtoContents:    file.FileContents,
+			CreatedAt:        timestamppb.New(file.CreatedAt),
+			UpdatedAt:        timestamppb.New(file.UpdatedAt),
+			PackageVersionId: uint64(pkgVer.ID),
+			FileName:         file.FileName,
+		})
+	}
+
+	return res, nil
+
 }

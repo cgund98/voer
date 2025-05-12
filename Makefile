@@ -1,3 +1,4 @@
+.PHONY: all test clean
 
 install-go-tools:
 	# Install protobuf tools
@@ -11,9 +12,12 @@ build-proto:
 	protoc -I. --go_out=. --go-grpc_out=. api/v1/package.proto
 
 
-build:
+build-cli:
 	# Build protobuf
 	make build-proto
+
+	# Build templ
+	templ generate
 
 	# Build voer
 	mkdir -p dist

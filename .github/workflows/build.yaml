@@ -1,0 +1,57 @@
+---
+name: Build
+
+on:
+    push:
+        branches:
+            - main
+
+jobs:
+    build-cli:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Setup Go 1.23.5
+              uses: actions/setup-go@v5
+              with:
+                go-version: 1.23.5
+
+            - name: Install Protoc
+              uses: arduino/setup-protoc@v3
+
+            - name: Install protoc-gen-go
+              run: go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+
+            - name: Install protoc-gen-go-grpc
+              run: go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+
+            - name: Generate protobuf files
+              run: make build-proto
+
+            - name: Codegen templ
+              run: |
+                export PATH=${PATH}:`go env GOPATH`/bin
+
+                go install github.com/a-h/templ/cmd/templ@latest
+
+                templ generate
+
+            - name: Install dependencies
+              run: go mod download
+
+            - name: Build
+              run: CGO_ENABLED=1 GOOS=linux go build -o voer
+
+    build-docker:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Build Docker image
+              uses: docker/build-push-action@v4
+              with:
+                context: .
+                file: build/Dockerfile
+                tags: cgundlach/voer:latest
+                target: prod

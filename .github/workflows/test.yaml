@@ -1,0 +1,60 @@
+---
+name: Lint & Test
+
+on:
+    pull_request:
+
+jobs:
+    lint-and-test:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Setup Go 1.23.5
+              uses: actions/setup-go@v5
+              with:
+                go-version: 1.23.5
+
+            - name: Install Protoc
+              uses: arduino/setup-protoc@v3
+
+            - name: Install protoc-gen-go
+              run: |
+                export PATH=${PATH}:`go env GOPATH`/bin
+                go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+                go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+
+            - name: Generate protobuf files
+              run: make build-proto
+
+            - name: Codegen templ
+              run: |
+                export PATH=${PATH}:`go env GOPATH`/bin
+
+                go install github.com/a-h/templ/cmd/templ@latest
+
+                templ generate
+
+            - name: Run Unit Tests
+              run: go test -v ./...
+
+            # Install golangci-lint
+            - name: Install golangci-lint
+              run: |
+                curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.1.6
+
+            - uses: actions/setup-python@v3
+            - uses: pre-commit/action@v3.0.1
+
+    build-docker:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Build Docker image
+              uses: docker/build-push-action@v4
+              with:
+                context: .
+                file: build/Dockerfile
+                tags: cgundlach/voer:latest
+                target: prod

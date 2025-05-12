@@ -32,6 +32,7 @@ message PackageVersionFile {
 
     uint64 packageVersionId = 4;
     string protoContents = 5;
+    string fileName = 6;
 }
 
 // UploadPackageVersion
@@ -51,11 +52,36 @@ message UploadPackageVersionRequest {
 }
 
 message UploadPackageVersionResponse {
-    uint64 packageId = 1;
-    int64 version = 2;
+    repeated PackageVersion packageVersions = 1;
 }
+
+// ValidatePackageVersion
+
+message ValidatePackageVersionRequest {
+    repeated PackageFile packages = 1;
+}
+
+message ValidatePackageVersionResponse {
+    bool isValid = 1;
+    string error = 2;
+}
+
+// Get Package Version
+
+message GetPackageVersionRequest {
+    string packageName = 1;
+    uint64 version = 2;
+}
+
+message GetPackageVersionResponse {
+    PackageVersion packageVersion = 1;
+    repeated PackageVersionFile files = 2;
+}
+
 
 // gRPC service for managing packages
 service PackageSvc {
     rpc UploadPackageVersion(UploadPackageVersionRequest) returns (UploadPackageVersionResponse) {}
+    rpc ValidatePackageVersion(ValidatePackageVersionRequest) returns (ValidatePackageVersionResponse) {}
+    rpc GetPackageVersion(GetPackageVersionRequest) returns (GetPackageVersionResponse) {}
 }
