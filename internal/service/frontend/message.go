@@ -62,6 +62,7 @@ func (s *Service) HandleListMessages(w http.ResponseWriter, r *http.Request) {
 			msgInput.Version = message.LatestVersion.Version
 			msgInput.UpdatedAt = message.LatestVersion.UpdatedAt
 			msgInput.ProtoBody = message.LatestVersion.ProtoBody
+			msgInput.PackageID = message.PackageID
 		}
 		cardInputs[i] = msgInput
 	}

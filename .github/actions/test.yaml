@@ -1,0 +1,42 @@
+---
+name: Testing
+
+on:
+    pull_request:
+        paths:
+        - go/**
+
+jobs:
+    unit-test-go:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Setup Go 1.23.5
+              uses: actions/setup-go@v5
+              with:
+                go-version: 1.23.5
+
+            - name: Install protobuf dependencies
+              run: |
+                apt-get update && apt-get install -y protobuf-compiler && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+            - name: Install protoc-gen-go
+              run: go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+
+            - name: Install protoc-gen-go-grpc
+              run: go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+
+            - name: Generate protobuf files
+              run: make build-proto
+
+            - name: Codegen templ
+              run: |
+                export PATH=${PATH}:`go env GOPATH`/bin
+
+                go install github.com/a-h/templ/cmd/templ@latest
+
+                templ generate
+
+            - name: Run Unit Tests
+              run: make unit-test-go

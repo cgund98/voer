@@ -15,6 +15,9 @@ build:
 	# Build protobuf
 	make build-proto
 
+	# Build templ
+	templ generate
+
 	# Build voer
 	mkdir -p dist
 	go build -o dist/voer cmd/voer/main.go

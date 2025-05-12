@@ -1,6 +1,7 @@
 <div align="center">
   <h1>Vör</h1>
   <p><strong>Schema Registry for Protobufs</strong></p>
+  <p><em>"Vör is wise and searching, so that nothing can be concealed from her. There is a saying that a woman becomes 'vör' (aware) of something when she finds it out."</em></p>
   <img src="./docs/images/list-messages-view.png" alt="Vör UI" width="800">
 </div>
 
@@ -37,8 +38,6 @@ architectures.
 Vör acts as the source of truth for your protobuf schemas. It helps teams collaborate by providing a central place to
 publish, version, and discover service contracts while ensuring safe schema evolution over time.
 
-### Example use case
-
 ## Installation
 
 ### CLI
@@ -51,6 +50,10 @@ wget voer-xx.xx.xx.tar.gz
 tar -xf voer-xx.xx.xx.tar.gz -C /usr/local/bin
 chmod +x /usr/local/bin/voer
 ```
+
+## Getting Started
+
+See the [following guide](./docs/02_getting_started.md) for basic instructions on using Vör.
 
 ## CLI Usage
 

@@ -1,0 +1,9 @@
+---
+services:
+  voer:
+    image: voer:latest
+    build:
+      context: .
+      dockerfile: build/Dockerfile
+      target: prod
+    network_mode: host
