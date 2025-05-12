@@ -59,7 +59,7 @@ See the [following guide](./docs/02_getting_started.md) for basic instructions o
 
 ### `validate`
 
-The `validate` command is used to validate that a protobuf package
+The `validate` command is used to validate that a protobuf package.
 
 ```bash
 # Example usage
@@ -80,6 +80,24 @@ voer upload --proto examples/helloworld/01_initial/helloworld.proto
 # Upload with custom endpoint
 voer upload --endpoint localhost:8000 --proto examples/helloworld/01_initial
 ```
+
+#### Package
+
+A package is defined by the `package` protobuf attribute. Example:
+
+```proto
+syntax = "proto3";
+
+package voer.v1;
+
+...
+```
+
+There are the following restrictions on how packages are structured:
+
+1. All `.proto` files with the same package must be in the same directory
+2. Messages must be unique across all `.proto` files within a package
+3. Package names must be unique within the registry
 
 ### `download`
 

@@ -126,7 +126,7 @@ func uploadAction(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("error uploading proto files: %v", err)
 	}
 
-	fmt.Println("Uploaded proto files successfully.")
+	fmt.Println("Uploaded schema successfully.")
 	for _, pkgVer := range uploadRes.PackageVersions {
 		fmt.Printf("Created new version of package #%d with version %d\n", pkgVer.PackageId, pkgVer.Version)
 	}

@@ -77,7 +77,6 @@ func ValidatePackagesInSameDirectory(ctx context.Context, protoFiles linker.File
 	packageNames := make(map[string]string)
 	for _, protoFile := range protoFiles {
 		if curPath, ok := packageNames[string(protoFile.Package())]; ok {
-			fmt.Println(getParentPath(protoFile))
 			if curPath != getParentPath(protoFile) {
 				return fmt.Errorf("proto file %s has the same package name as %s but is in a different directory", protoFile.Path(), curPath)
 			}

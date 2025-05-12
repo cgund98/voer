@@ -75,7 +75,7 @@ make install-go-tools
 make build-proto
 
 # Build CLI
-make build
+make build-cli
 
 # Or run web server without building
 make dev-server

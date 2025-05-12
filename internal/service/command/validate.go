@@ -90,9 +90,9 @@ func validateAction(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	if validateRes.IsValid {
-		fmt.Println("Backwards compatible messages validated successfully")
+		fmt.Println("Schema validated successfully")
 	} else {
-		fmt.Println("Proto files are not backwards compatible.")
+		fmt.Println("Schema is not backwards compatible.")
 		fmt.Printf("Error: %v\n", validateRes.Error)
 	}
 

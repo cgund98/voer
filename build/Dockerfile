@@ -45,4 +45,4 @@ RUN apt-get update && \
 WORKDIR /app
 COPY --from=builder /app/voer /app/voer
 
-ENTRYPOINT ["/app/voer"]
+ENTRYPOINT ["/app/voer", "server"]
