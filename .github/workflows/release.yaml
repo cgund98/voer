@@ -21,6 +21,28 @@ jobs:
       with:
         title: release-${{ github.ref_name }}
 
+
+
+  push-docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: build/Dockerfile
+          tags: cgundlach/voer:${{ github.ref_name }}
+          target: prod
+          push: true
+
   releases-matrix:
     name: Release Go Binary
     runs-on: ubuntu-latest
