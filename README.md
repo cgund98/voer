@@ -1,78 +1,129 @@
-# Vör
+<div align="center">
+  <h1>Vör</h1>
+  <p><strong>Schema Registry for Protobufs</strong></p>
+  <img src="./docs/images/list-messages-view.png" alt="Vör UI" width="800">
+</div>
 
-Schema Registry for Protobufs
+## Why?
 
-### Why?
+Modern software systems are increasingly built on event-driven architectures and microservices that communicate through
+well-defined interfaces. These systems need a robust way to manage their service contracts and message schemas.
 
-### How it works
+Without proper schema management, teams risk introducing breaking changes that can cascade through their distributed
+systems. A central schema registry ensures that all services speak the same language and evolve their interfaces safely
+over time.
 
-1. Developer creates a new `.proto` package.
-2. When ready, developer publishes package to registry.
-3. Consumers pull package schema from registry.
+## What is Vör? 🌟
 
-Over time, the schema owner can publish new package versions, while the Schema Registry will ensure that no breaking
-changes are made.
+Vör is a schema registry for Protocol Buffers (protobufs) that provides:
+
+- 📦 Central storage and versioning of protobuf schemas
+- ✅ Backwards compatibility validation between schema versions
+- 🖥️ Web UI for browsing and discovering schemas
+- 🛠️ CLI tool for schema validation and publishing
+- 🌐 Language-agnostic schema management - works with any programming language that supports protobufs
+
+Vör is designed to be the central registry for managing and discovering protobuf schemas in your event-driven or gRPC
+architectures.
+
+## How it Works ⚙️
+
+1. Developers create and maintain `.proto` files locally, defining their service interfaces and message types
+2. Using the CLI tool, developers validate their proto packages to ensure compatibility with previous versions
+3. Once validated, developers publish the package to the central registry
+4. Consumers can discover and download schema versions through the web UI or CLI
+5. The registry enforces backwards compatibility - preventing breaking changes between versions
+
+Vör acts as the source of truth for your protobuf schemas. It helps teams collaborate by providing a central place to
+publish, version, and discover service contracts while ensuring safe schema evolution over time.
 
 ### Example use case
 
-## Usage
+## Installation
+
+### CLI
+
+`voer` is shipped as a single binary, or as a docker image.
+
+```bash
+wget voer-xx.xx.xx.tar.gz
+
+tar -xf voer-xx.xx.xx.tar.gz -C /usr/local/bin
+chmod +x /usr/local/bin/voer
+```
+
+## CLI Usage
+
+### `validate`
+
+The `validate` command is used to validate that a protobuf package
+
+```bash
+# Example usage
+voer validate --proto examples/helloworld/01_initial
+```
+
+### `upload`
+
+The `upload` command is used to upload new package versions.
+
+```bash
+# Upload all proto files under a path
+voer upload --proto examples/helloworld/01_initial
+
+# Upload a specific proto file
+voer upload --proto examples/helloworld/01_initial/helloworld.proto
+
+# Upload with custom endpoint
+voer upload --endpoint localhost:8000 --proto examples/helloworld/01_initial
+```
+
+### `download`
+
+The `download` command is used to fetch a remote package version and save files locally.
+
+```bash
+# Download a package version to the current directory
+voer download --package helloworld --version 1
+
+# Download to a specific directory
+voer download --package helloworld --version 1 --output ./protos
+
+# Download with custom endpoint
+voer download --endpoint localhost:8000 --package helloworld --version 1
+```
+
+### `server`
+
+The `server` command starts the web server.
+
+```bash
+# Start the server with default configuration
+voer server
+
+# Start with custom gRPC port
+voer server --grpc-port 9000
+# Or using environment variables
+export VOER_GRPCPORT=9000
+voer server
+
+# Start with custom frontend port
+voer server --frontend-port 3000
+# Or using environment variables
+export VOER_FRONTENDPORT=3000
+voer server
+
+# Start with custom database path
+export VOER_SQLITEDBPATH=/path/to/db.sqlite
+voer server
+
+# Start with all custom options
+export VOER_GRPCPORT=9000
+export VOER_FRONTENDPORT=3000
+export VOER_SQLITEDBPATH=/path/to/db.sqlite
+voer server
+```
 
 ## Development
 
-### Dependencies
-
-### Linting
-
-- `gofmt`, installed with Go.
-- `golangci-lint`, [installed separately](https://golangci-lint.run/welcome/install/#local-installation).
-
-Installation of additional tools:
-
-```bash
-# Install golangci-lint
-curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.1.6
-```
-
-#### Pre-commit
-
-A utility called [pre-commit](https://pre-commit.com) is used to automatically run our linting utilities before a commit
-is made.
-
-```bash
-# Install pre-commit hooks
-pre-commit install
-
-# Run all linting rules on all files manually
-pre-commit run --all-files
-```
-
-### Tests
-
-```bash
-# Run unit tests
-make test
-```
-
-### Build
-
-Builds are done with Bazel.
-
-```bash
-
-# Install additional Go CLIs (protoc, templ, etc.)
-make install-go-tools
-
-# Build protobufs
-make build-proto
-
-# Build CLI
-make build
-```
-
-### Release
-
-Cut new releases by using tags and GitHub Actions.
-
-```bash
-
-```
+For documentation pertaining to contributing to this repo, check the [related guide](./docs/01_development.md)

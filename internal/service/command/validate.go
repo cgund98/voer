@@ -4,74 +4,118 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path/filepath"
 
+	"github.com/bufbuild/protocompile/linker"
+	v1 "github.com/cgund98/voer/api/v1"
+	"github.com/cgund98/voer/internal/infra/config"
 	"github.com/cgund98/voer/internal/proto"
 	"github.com/urfave/cli/v3"
-)
-
-const (
-	// Flag names
-	prevFlag   = "previous"
-	latestFlag = "latest"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 // validateAction is the action for the validate command
 func validateAction(ctx context.Context, cmd *cli.Command) error {
 
-	prevPath := cmd.String(prevFlag)
-	latestPath := cmd.String(latestFlag)
+	protoPath := cmd.String(protoFlag)
+	endpoint := cmd.String(endpointFlag)
 
-	if prevPath == "" || latestPath == "" {
-		return errors.New("previous and latest paths are required")
+	if protoPath == "" {
+		return errors.New("proto path is required")
 	}
 
-	prevFiles, err := proto.ParsePath(ctx, prevPath)
+	// Init client
+	opts := []grpc.DialOption{}
+	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+
+	conn, err := grpc.NewClient(endpoint, opts...)
 	if err != nil {
-		return fmt.Errorf("error parsing previous proto files: %v", err)
+		return fmt.Errorf("error creating client: %v", err)
 	}
-	if len(prevFiles) != 1 {
-		return fmt.Errorf("expected 1 previous proto file, got %d", len(prevFiles))
-	}
-	prevFile := prevFiles[0]
+	client := v1.NewPackageSvcClient(conn)
 
-	latestFiles, err := proto.ParsePath(ctx, latestPath)
+	// Scan for .proto files under the given path
+	filePaths, err := findProtoFiles(protoPath)
 	if err != nil {
-		return fmt.Errorf("error parsing latest proto files: %v", err)
+		return err
 	}
-	if len(latestFiles) != 1 {
-		return fmt.Errorf("expected 1 latest proto file, got %d", len(latestFiles))
+
+	protoFiles := make(linker.Files, 0)
+	for _, filePath := range filePaths {
+		curFiles, err := proto.ParsePath(ctx, filePath)
+		if err != nil {
+			return fmt.Errorf("error parsing proto files: %v", err)
+		}
+		protoFiles = append(protoFiles, curFiles...)
 	}
-	latestFile := latestFiles[0]
 
-	prevMessages := proto.ParseMessagesFromFile(prevFile)
-	latestMessages := proto.ParseMessagesFromFile(latestFile)
-
-	err = proto.ValidateBackwardsCompatibleMessages(ctx, prevMessages, latestMessages)
+	// Validate package names are unique
+	err = proto.ValidatePackagesInSameDirectory(ctx, protoFiles)
 	if err != nil {
-		return fmt.Errorf("error validating backwards compatible messages: %v", err)
+		return err
 	}
 
-	fmt.Println("Backwards compatible messages validated successfully")
+	// Upload the proto files
+	validateReq := &v1.ValidatePackageVersionRequest{}
+
+	// Group based on package name
+	packageFiles := proto.GroupByPackage(protoFiles)
+	for packageName, files := range packageFiles {
+
+		// Get file contents
+		packageFiles := make([]*v1.ProtoFile, 0)
+		for _, file := range files {
+			fileContents, err := proto.ReadStrings(ctx, file.Path())
+			if err != nil {
+				return fmt.Errorf("error reading proto files: %v", err)
+			}
+
+			packageFiles = append(packageFiles, &v1.ProtoFile{
+				FileName:     filepath.Base(file.Path()),
+				FileContents: fileContents[0].FileContents,
+			})
+		}
+
+		validateReq.Packages = append(validateReq.Packages, &v1.PackageFile{
+			PackageName: packageName,
+			Files:       packageFiles,
+		})
+	}
+
+	// Validate the proto files
+	validateRes, err := client.ValidatePackageVersion(ctx, validateReq)
+	if err != nil {
+		return fmt.Errorf("error validating proto files: %v", err)
+	}
+
+	if validateRes.IsValid {
+		fmt.Println("Backwards compatible messages validated successfully")
+	} else {
+		fmt.Println("Proto files are not backwards compatible.")
+		fmt.Printf("Error: %v\n", validateRes.Error)
+	}
 
 	return nil
 }
 
 // Validate will validate that a proto file is backwards compatible with another
-func ValidateCommand() *cli.Command {
+func ValidateCommand(config *config.Config) *cli.Command {
 	return &cli.Command{
 		Name:   "validate",
-		Usage:  "Validate that a proto file is backwards compatible with another",
+		Usage:  "Validate that a proto file is backwards compatible with any existing packages",
 		Action: validateAction,
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:     prevFlag,
-				Usage:    "The previous proto file",
+				Name:     protoFlag,
+				Usage:    "Path to the proto files to validate",
 				Required: true,
 			},
 			&cli.StringFlag{
-				Name:     latestFlag,
-				Usage:    "The latest proto file",
-				Required: true,
+				Name:     endpointFlag,
+				Usage:    "The endpoint to upload the proto file to",
+				Required: false,
+				Value:    config.GrpcEndpoint,
 			},
 		},
 	}

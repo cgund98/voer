@@ -21,9 +21,10 @@ func main() {
 
 	cmd := &cli.Command{
 		Commands: []*cli.Command{
-			command.ValidateCommand(),
+			command.ValidateCommand(config),
 			command.UploadCommand(config),
 			command.ServerCommand(config),
+			command.DownloadCommand(config),
 		},
 	}
 
