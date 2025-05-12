@@ -15,15 +15,14 @@ jobs:
               with:
                 go-version: 1.23.5
 
-            - name: Install protobuf dependencies
-              run: |
-                apt-get update && apt-get install -y protobuf-compiler && apt-get clean && rm -rf /var/lib/apt/lists/*
+            - name: Install Protoc
+              uses: arduino/setup-protoc@v3
 
             - name: Install protoc-gen-go
-              run: go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-
-            - name: Install protoc-gen-go-grpc
-              run: go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+              run: |
+                export PATH=${PATH}:`go env GOPATH`/bin
+                go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+                go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 
             - name: Generate protobuf files
               run: make build-proto
