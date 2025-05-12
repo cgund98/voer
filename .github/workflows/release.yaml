@@ -39,7 +39,7 @@ jobs:
         with:
           context: .
           file: build/Dockerfile
-          tags: cgundlach/voer:${{ github.ref_name }}
+          tags: cgundlach13/voer:${{ github.ref_name }}
           target: prod
           push: true
 

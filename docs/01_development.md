@@ -83,8 +83,11 @@ make dev-server
 
 ## Release
 
-Cut new releases by using tags and GitHub Actions.
+Cut new releases by using tags and GitHub Actions. The CI pipeline will automatically build and publish binaries and
+docker images.
 
 ```bash
-
+export RELEASE_VERSION='v0.1.2'
+git tag $RELEASE_VERSION
+git push origin $RELEASE_VERSION
 ```

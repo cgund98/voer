@@ -55,5 +55,5 @@ jobs:
               with:
                 context: .
                 file: build/Dockerfile
-                tags: cgundlach/voer:latest
+                tags: cgundlach13/voer:latest
                 target: prod
