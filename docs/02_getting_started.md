@@ -16,7 +16,7 @@ chmod +x /usr/local/bin/voer
 ### Docker
 
 ```bash
-docker pull cgundlach/voer:latest
+docker pull cgundlach13/voer:latest
 ```
 
 ## Start registry server

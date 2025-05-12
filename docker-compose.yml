@@ -1,7 +1,7 @@
 ---
 services:
   voer:
-    image: cgundlach/voer:latest
+    image: cgundlach13/voer:latest
     build:
       context: .
       dockerfile: build/Dockerfile
