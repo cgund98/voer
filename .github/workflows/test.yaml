@@ -36,4 +36,4 @@ jobs:
                 templ generate
 
             - name: Run Unit Tests
-              run: make unit-test-go
+              run: go test -v ./...
